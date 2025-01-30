@@ -133,3 +133,6 @@ cython_debug/
 
 # Our folders
 data/
+logs/
+models/
+wandb/

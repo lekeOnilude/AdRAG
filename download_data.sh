@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 URL="https://zenodo.org/api/records/14680012/files-archive"

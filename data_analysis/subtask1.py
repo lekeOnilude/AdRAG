@@ -34,7 +34,7 @@ def analyze_dataset(data):
         passage_counts.append(passages_per_query)
 
         for passage in candidates:
-            passage_sizes.append(len(passage["doc"]["segment"]))
+            passage_sizes.append(len(passage["doc"]["segment"].split(" ")))
 
         advertisements = [x for x in entry["advertisements"] if x]
 
@@ -44,7 +44,9 @@ def analyze_dataset(data):
 
         ad_counts.append(len(advertisements))
         for ad in [x for x in entry["advertisements"] if x]:
-            ad_description_sizes.append(len(ad["type"]) + len(ad["qualities"]))
+            ad_description_sizes.append(
+                len(ad["type"].split(" ")) + len(ad["qualities"].split(" "))
+            )
 
     # Compute statistics
     avg_ads_per_query = sum(ad_counts) / (query_count - queries_without_ads)
@@ -65,11 +67,11 @@ def analyze_dataset(data):
     print(
         f"For the queries that have ads, average ads per query: {avg_ads_per_query:.2f}"
     )
-    print(f"Average ad description size: {avg_ad_desc_size:.2f} characters")
+    print(f"Average ad description size: {avg_ad_desc_size:.2f} words")
     print(
         f"Passages per query (min/max/avg): {min_passages}/{max_passages}/{avg_passages:.2f}"
     )
-    print(f"Average passage size: {avg_passage_size:.2f} characters")
+    print(f"Average passage size: {avg_passage_size:.2f} words")
 
 
 if __name__ == "__main__":

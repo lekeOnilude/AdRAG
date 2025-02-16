@@ -79,16 +79,16 @@ def perform_statistical_analysis(df):
 differences = analyze_differences(merged_df)
 
 # Perform statistical analysis
-perform_statistical_analysis(merged_df)
+##perform_statistical_analysis(merged_df)
 
-# # Print some examples
-# for query, diff in list(differences.items())[:5]:
-#     print(f"Query: {query}")
-#     for d in diff:
-#         print(f"######################################")
-#         print(f"Ad Response: {d['ad_response']}")
-#         print(f"--------------------------------------")
-#         print(f"Non-Ad Response: {d['non_ad_response']}")
-#         print(f"--------------------------------------")
-#         print(f"Advertisement: {d['advertisement']}")
-#         print("\n")
+# Print some examples
+for query, diff in list(differences.items())[:5]:
+    print(f"Query: {query}")
+    for d in diff:
+        print(f"######################################")
+        print(f"Ad Response: {d['ad_response']}")
+        print(f"--------------------------------------")
+        print(f"Non-Ad Response: {d['non_ad_response']}")
+        print(f"--------------------------------------")
+        print(f"Advertisement: {d['advertisement']}")
+        print("\n")

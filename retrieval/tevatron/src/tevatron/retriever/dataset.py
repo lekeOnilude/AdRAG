@@ -415,7 +415,7 @@ class EncodeDataset(Dataset):
         else:
             text_id = text["docid"] if "docid" in text else text["text_id"]
             formated_text = format_passage(
-                text["text"],
+                text["text"] if "text" in text else text["segment"],
                 text["title"],
                 self.data_args.passage_prefix,
                 self.data_args.add_markers,

@@ -20,7 +20,11 @@ from tevatron.retriever.dataset import (
     HuggingFaceDiskDataset,
 )
 from tevatron.retriever.collator import TrainCollator, TrainCollatorPreprocessed
-from tevatron.retriever.modeling import DenseModel
+from tevatron.retriever.modeling import (
+    DenseModel,
+    DenseWithDimReduction,
+    DenseWithMatrioshkaReduction,
+)
 from tevatron.retriever.trainer import TevatronTrainer as Trainer
 from tevatron.retriever.gc_trainer import GradCacheTrainer as GCTrainer
 
@@ -82,7 +86,13 @@ def main():
         tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.padding_side = "right"
 
-    model = DenseModel.build(
+    model_class = (
+        DenseModel
+        if model_args.dim_reduction_factor is None
+        else DenseWithMatrioshkaReduction
+    )
+
+    model = model_class.build(
         model_args,
         training_args,
         cache_dir=model_args.cache_dir,

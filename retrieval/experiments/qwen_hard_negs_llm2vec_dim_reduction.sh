@@ -20,41 +20,43 @@ conda activate qa_proj
 base_model=Qwen2.5-0.5B-bidirectional-attn-mntp
 port=$((RANDOM % (23000 - 20000 + 1) + 20000))
 
+REDUCTION_FACTOR=$1
 
-model_output_name=$base_model-marco-passage-hard-negatives
+model_output_name=$base_model-marco-passage-hard-negatives-matrioshka-reduction-$REDUCTION_FACTOR
 EMBEDDING_OUTPUT_DIR=/data/group_data/cx_group/query_generation_data/temporary_indexes/$model_output_name
 
 
 mkdir -p $EMBEDDING_OUTPUT_DIR
 
-deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port $port --module tevatron.retriever.driver.train \
-  --deepspeed tevatron/deepspeed/ds_zero3_config.json \
-  --dataset_cache_dir $HF_HOME \
-  --cache_dir $HF_HOME \
-  --output_dir /data/user_data/jmcoelho/models/$model_output_name \
-  --model_name_or_path /data/user_data/jmcoelho/models/$base_model \
-  --dataset_name Tevatron/msmarco-passage-aug \
-  --save_steps 20000000 \
-  --query_prefix "Query: " \
-  --passage_prefix "Passage" \
-  --add_markers True \
-  --bf16 \
-  --pooling avg \
-  --gradient_checkpointing \
-  --append_eos_token \
-  --normalize \
-  --temperature 0.01 \
-  --per_device_train_batch_size 128 \
-  --train_group_size 16 \
-  --learning_rate 1e-4 \
-  --query_max_len 32 \
-  --passage_max_len 128 \
-  --num_train_epochs 1 \
-  --logging_steps 1 \
-  --overwrite_output_dir \
-  --gradient_accumulation_steps 2 \
-  --report_to wandb \
-  --run_name $model_output_name
+# deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port $port --module tevatron.retriever.driver.train \
+#   --deepspeed tevatron/deepspeed/ds_zero3_config.json \
+#   --dataset_cache_dir $HF_HOME \
+#   --cache_dir $HF_HOME \
+#   --output_dir /data/user_data/jmcoelho/models/$model_output_name \
+#   --model_name_or_path /data/user_data/jmcoelho/models/$base_model \
+#   --dataset_name Tevatron/msmarco-passage-aug \
+#   --save_steps 20000000 \
+#   --query_prefix "Query: " \
+#   --passage_prefix "Passage" \
+#   --add_markers True \
+#   --bf16 \
+#   --dim_reduction_factor $REDUCTION_FACTOR \
+#   --pooling avg \
+#   --gradient_checkpointing \
+#   --append_eos_token \
+#   --normalize \
+#   --temperature 0.01 \
+#   --per_device_train_batch_size 128 \
+#   --train_group_size 16 \
+#   --learning_rate 1e-4 \
+#   --query_max_len 32 \
+#   --passage_max_len 128 \
+#   --num_train_epochs 1 \
+#   --logging_steps 1 \
+#   --overwrite_output_dir \
+#   --gradient_accumulation_steps 2 \
+#   --report_to wandb \
+#   --run_name $model_output_name
 
 echo "Inference"
 
@@ -71,6 +73,7 @@ for shard in {0..7}; do
         CUDA_VISIBLE_DEVICES=$shard python -m tevatron.retriever.driver.encode \
                 --output_dir=temp \
                 --bf16 \
+                --dim_reduction_factor $REDUCTION_FACTOR \
                 --model_name_or_path /data/user_data/jmcoelho/models/$model_output_name \
                 --dataset_cache_dir $HF_HOME \
                 --cache_dir $HF_HOME \
@@ -95,6 +98,7 @@ CUDA_VISIBLE_DEVICES=0 python -m tevatron.retriever.driver.encode \
     --output_dir=temp \
     --model_name_or_path /data/user_data/jmcoelho/models/$model_output_name \
     --bf16 \
+    --dim_reduction_factor $REDUCTION_FACTOR \
     --pooling avg \
     --normalize \
     --dataset_cache_dir $HF_HOME \

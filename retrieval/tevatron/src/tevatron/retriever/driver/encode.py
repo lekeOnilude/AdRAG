@@ -15,11 +15,19 @@ from transformers import (
     HfArgumentParser,
 )
 
-from tevatron.retriever.arguments import ModelArguments, DataArguments, \
-    TevatronTrainingArguments as TrainingArguments
+from tevatron.retriever.arguments import (
+    ModelArguments,
+    DataArguments,
+    TevatronTrainingArguments as TrainingArguments,
+)
 from tevatron.retriever.dataset import EncodeDataset
 from tevatron.retriever.collator import EncodeCollator
-from tevatron.retriever.modeling import EncoderOutput, DenseModel
+from tevatron.retriever.modeling import (
+    EncoderOutput,
+    DenseModel,
+    DenseWithDimReduction,
+    DenseWithMatrioshkaReduction,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +35,9 @@ logger = logging.getLogger(__name__)
 def main():
     parser = HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+        model_args, data_args, training_args = parser.parse_json_file(
+            json_file=os.path.abspath(sys.argv[1])
+        )
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
         model_args: ModelArguments
@@ -35,7 +45,7 @@ def main():
         training_args: TrainingArguments
 
     if training_args.local_rank > 0 or training_args.n_gpu > 1:
-        raise NotImplementedError('Multi-GPU encoding is not supported.')
+        raise NotImplementedError("Multi-GPU encoding is not supported.")
 
     # Setup logging
     logging.basicConfig(
@@ -44,14 +54,17 @@ def main():
         level=logging.INFO if training_args.local_rank in [-1, 0] else logging.WARN,
     )
 
-
     tokenizer = AutoTokenizer.from_pretrained(
-        model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
-        cache_dir=model_args.cache_dir
+        (
+            model_args.tokenizer_name
+            if model_args.tokenizer_name
+            else model_args.model_name_or_path
+        ),
+        cache_dir=model_args.cache_dir,
     )
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token_id = tokenizer.eos_token_id
-    tokenizer.padding_side = 'right'
+    tokenizer.padding_side = "right"
 
     if training_args.bf16:
         torch_dtype = torch.bfloat16
@@ -59,14 +72,21 @@ def main():
         torch_dtype = torch.float16
     else:
         torch_dtype = torch.float32
-    
-    model = DenseModel.load(
+
+    model_class = (
+        DenseModel
+        if model_args.dim_reduction_factor is None
+        else DenseWithMatrioshkaReduction
+    )
+
+    model = model_class.load(
         model_args.model_name_or_path,
         pooling=model_args.pooling,
+        dim_reduction_factor=model_args.dim_reduction_factor,
         normalize=model_args.normalize,
         lora_name_or_path=model_args.lora_name_or_path,
         cache_dir=model_args.cache_dir,
-        torch_dtype=torch_dtype
+        torch_dtype=torch_dtype,
     )
 
     encode_dataset = EncodeDataset(
@@ -99,9 +119,11 @@ def main():
         print("Set encoding precision: bf16")
         dtype = torch.bfloat16
 
-    for (batch_ids, batch) in tqdm(encode_loader):
+    for batch_ids, batch in tqdm(encode_loader):
         lookup_indices.extend(batch_ids)
-        with torch.cuda.amp.autocast(dtype=dtype) if dtype is not None else nullcontext():
+        with (
+            torch.cuda.amp.autocast(dtype=dtype) if dtype is not None else nullcontext()
+        ):
             with torch.no_grad():
                 for k, v in batch.items():
                     batch[k] = v.to(training_args.device)
@@ -114,7 +136,7 @@ def main():
 
     encoded = np.concatenate(encoded)
 
-    with open(data_args.encode_output_path, 'wb') as f:
+    with open(data_args.encode_output_path, "wb") as f:
         pickle.dump((encoded, lookup_indices), f)
 
 

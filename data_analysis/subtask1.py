@@ -74,6 +74,16 @@ def analyze_dataset(data):
     print(f"Average passage size: {avg_passage_size:.2f} words")
 
 
+def process_data(data, output_file):
+    with open(output_file, "w") as f:
+        for entry in data:
+            query_id = entry["query"]["id"]
+            text = entry["query"]["text"]
+
+            new_entry = {"query_id": query_id, "query": text}
+            f.write(json.dumps(new_entry) + "\n")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Analyze Webis Generated Native Ads 2024 dataset"
@@ -81,3 +91,5 @@ if __name__ == "__main__":
 
     data = load_jsonl("./data/subtask-1/touche-task4-2025-segments.jsonl")
     analyze_dataset(data)
+    out_file = "./data/subtask-1/queries.jsonl"
+    process_data(data, out_file)

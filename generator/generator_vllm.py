@@ -1,67 +1,84 @@
-from vllm import LLM, SamplingParams
-from nltk.translate.bleu_score import sentence_bleu
-from rouge_score import rouge_scorer
-from typing import List, Optional
-from tqdm import tqdm
 import json
+import os
+from transformers import AutoTokenizer
+from vllm import LLM, SamplingParams
+from tqdm import tqdm
+
+# Configuration
+model_name = "Qwen/Qwen2.5-1.5B-Instruct"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+sampling_params = SamplingParams(
+    temperature=0.7, top_p=0.8, repetition_penalty=1.05, max_tokens=512
+)
+llm = LLM(model=model_name)
+
+task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
+num_tasks = 8
 
 
-class QA_TopicEvaluator:
-    def __init__(self, model_name="deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"):
-        """Initialize the QA model using vLLM."""
-        self.model = LLM(model_name)
-        self.sampling_params = SamplingParams(temperature=0.7, top_p=0.9, max_tokens=256)
+QUERY_SET = "marcov2"
+RETRIEVAL_MODEL = "Qwen2.5-0.5B-bidirectional-attn-mntp-marco-passage-hard-negatives-matrioshka-reduction-2"
+RUN_NAME = "Qwen2.5-1.5B-Instruct-10-passage-RAG"
 
-    def generate_answer(self, query: str, context=None) -> str:
-        """Generate an answer to the query using the context."""
-        if not context:
-            context = "No context provided"
-        prompt = f"{query}"
-        results = self.model.generate([prompt], self.sampling_params)
-        return results[0].outputs[0].text.strip()
+INPUT_FILE = (
+    f"/home/jmcoelho/11797_Project/retrieval/output/{QUERY_SET}/{RETRIEVAL_MODEL}.jsonl"
+)
+if not os.path.exists(INPUT_FILE):
+    raise FileNotFoundError(f"Input file not found: {INPUT_FILE}")
 
-    def evaluate(self, query: str, reference_answer: str, context: Optional[List[str]] = None):
-        """Evaluate the generated answer using ROUGE and BLEU scores."""
-        generated_answer = self.generate_answer(query, context)
+# Output folder for individual tasks
+OUTPUT_FOLDER = (
+    f"/home/jmcoelho/11797_Project/generator/output/{QUERY_SET}/{RETRIEVAL_MODEL}"
+)
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-        scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
-        rouge_scores = scorer.score(reference_answer, generated_answer)
 
-        bleu_score = sentence_bleu([reference_answer.split()], generated_answer.split())
+data_entries = []
+with open(INPUT_FILE, "r", encoding="utf-8") as f:
+    for line in f:
+        if line.strip():
+            data_entries.append(json.loads(line))
 
-        return {
-            "query": query,
-            "generated_answer": generated_answer,
-            "rouge_score": rouge_scores["rougeL"].fmeasure,
-            "bleu_score": bleu_score
-        }
+subset_data_entries = [
+    entry for i, entry in enumerate(data_entries) if i % num_tasks == task_id
+]
 
-qa_evaluator = QA_TopicEvaluator()
-filepath = "dev_v2.1.json"  # Replace with the correct local path
-with open(filepath, "r") as file:
-    data = json.load(file)
 
-stats = {
-    "count": 0,
-    "totalBleu": 0, "minBleu": 1000, "maxBleu": -1000,
-    "totalRouge": 0, "minRouge": 1000, "maxRouge": -1000
-}
+def build_prompt(query, passages):
 
-for key in data['wellFormedAnswers']:
-    if data['wellFormedAnswers'][key] != '[]':
-        if stats["count"] % 100 == 0:
-            print(stats)
-        query = data["query"][key]
-        answer = data['wellFormedAnswers'][key][0]
-        results = qa_evaluator.evaluate(query, answer)
-        stats["count"] += 1
-        stats["totalBleu"] += results["bleu_score"]
-        stats["maxBleu"] = max(stats["maxBleu"], results["bleu_score"])
-        stats["minBleu"] = min(stats["minBleu"], results["bleu_score"])
-        stats["totalRouge"] += results["rouge_score"]
-        stats["maxRouge"] = max(stats["maxRouge"], results["rouge_score"])
-        stats["minRouge"] = min(stats["minRouge"], results["rouge_score"])
+    nl = "\n"
+    user_content = f"""Answer the following web query, given the context. 
+    Context: {nl.join(passages[:10])}.
+    Query: {query}.
+    Reply with your answer only. Do not include the query or any other information. Keep your answer short.
+    """
 
-stats['avgBlue'] = stats["totalBleu"] / stats["count"]
-stats['avgRouge'] = stats["totalRouge"] / stats["count"]
-print(stats)
+    messages = [
+        {
+            "role": "system",
+            "content": "You are Qwen, created by Alibaba Cloud. You are a helpful assistant. For this interaction, you will be answering a web search query.",
+        },
+        {"role": "user", "content": user_content},
+    ]
+    prompt_text = tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
+    return prompt_text
+
+
+prompts = []
+for entry in tqdm(subset_data_entries, desc=f"Task {task_id}"):
+    query = entry["query"]
+    passages = entry.get("passages", [])
+    prompt_text = build_prompt(query, passages)
+    prompts.append(prompt_text)
+
+outputs = llm.generate(prompts, sampling_params)
+assert len(outputs) == len(subset_data_entries)
+
+output_file = os.path.join(OUTPUT_FOLDER, f"{RUN_NAME}_{task_id}.jsonl")
+with open(output_file, "w", encoding="utf-8") as f:
+    for output, entry in zip(outputs, subset_data_entries):
+        candidate = output.outputs[0].text.strip()
+        query_id = entry["query_id"]
+        f.write(json.dumps({"query_id": query_id, "response": candidate}) + "\n")

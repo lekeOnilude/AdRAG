@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 QUERY_SET = "marcov2"
 RETRIEVAL_MODEL = "Qwen2.5-0.5B-bidirectional-attn-mntp-marco-passage-hard-negatives-matrioshka-reduction-2"
-RUN_NAME = "Qwen2.5-1.5B-Instruct-10-passage-RAG"
+RUN_NAME = "Qwen2.5-72B-Instruct-10-passage-RAG"
 
 
 generated_files_pattern = f"/home/jmcoelho/11797_Project/generator/output/{QUERY_SET}/{RETRIEVAL_MODEL}/{RUN_NAME}_*.jsonl"

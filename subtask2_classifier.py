@@ -143,7 +143,7 @@ training_args = TrainingArguments(
     eval_steps=50,
     save_strategy="no",
     logging_steps=1,
-    report_to="wandb",
+    # report_to="wandb",
 )
 
 model = AutoModelForSequenceClassification.from_pretrained(model_to_train, num_labels=2)

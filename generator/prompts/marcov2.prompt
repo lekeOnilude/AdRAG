@@ -1,0 +1,4 @@
+Answer the following web query, given the context.
+Context: {context}.
+Query: {query}.
+Reply only with an 'well formed answer': a human-like complete sentence, brief and direct to the point.

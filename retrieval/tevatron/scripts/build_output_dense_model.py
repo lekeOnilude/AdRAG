@@ -3,13 +3,14 @@ import glob
 from tqdm import tqdm
 
 MODEL_NAME = "Qwen2.5-0.5B-bidirectional-attn-mntp-marco-passage-hard-negatives-matrioshka-reduction-2"
-QUERIES = "marcov2" #touche
+QUERIES = "marcov2.train"  # touche;marcov2;marcov2.train
 
 PATH_RUN = f"/data/group_data/cx_group/query_generation_data/temporary_indexes/{MODEL_NAME}/marco_v2_segmented/run.{QUERIES}.txt"
 
 QUERIES_PATHS = {
     "touche": "/home/jmcoelho/11797_Project/data/subtask-1/queries.jsonl",
-    "marcov2": "/home/jmcoelho/11797_Project/data/marco_v2.1_qa_dev/queries_with_answer_and_bing_passages.jsonl"
+    "marcov2": "/home/jmcoelho/11797_Project/data/marco_v2.1_qa_dev/queries_with_answer_and_bing_passages.jsonl",
+    "marcov2.train": "/home/jmcoelho/11797_Project/data/marco_v2.1_qa_train/queries_with_answer_and_bing_passages.jsonl",
 }
 
 
@@ -39,17 +40,13 @@ for file in tqdm(glob.glob(PATH_CORPUS)):
     with open(file, "r") as f:
         for line in f:
             doc = json.loads(line)
-            corpus[doc["docid"]] = f"Title: {doc["title"]}. Text: {doc["segment"]}."
+            corpus[doc["docid"]] = f"Title: {doc['title']}. Text: {doc['segment']}."
 
 with open(PATH_OUT, "w") as f:
     for qid in qid2pids:
         query_text = queries[qid]
         passages_text = [corpus[pid] for pid in qid2pids[qid]]
-        data = {
-            "query_id": qid,
-            "query": query_text,
-            "passages": passages_text
-        }
+        data = {"query_id": qid, "query": query_text, "passages": passages_text}
 
         if answers != {}:
             data["answers"] = answers[qid]

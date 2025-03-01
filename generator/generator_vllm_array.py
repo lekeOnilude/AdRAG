@@ -21,16 +21,17 @@ def load_template(filepath):
         return f.read()
 
 
-QUERY_SET = "marcov2.train"
+RAG_N_PASSAGES = 10
+QUERY_SET = "marcov2"
 RETRIEVAL_MODEL = "Qwen2.5-0.5B-bidirectional-attn-mntp-marco-passage-hard-negatives-matrioshka-reduction-2"
-RUN_NAME = f"{model_name.split('/')[-1]}-10-passage-RAG"
+RUN_NAME = f"{model_name.split('/')[-1]}-{RAG_N_PASSAGES}-passage-RAG"
 PROMPT = f"./prompts/{QUERY_SET}.prompt"
 
-# INPUT_FILE = (
-#     f"/home/jmcoelho/11797_Project/retrieval/output/{QUERY_SET}/{RETRIEVAL_MODEL}.jsonl"
-# )
+INPUT_FILE = (
+    f"/home/jmcoelho/11797_Project/retrieval/output/{QUERY_SET}/{RETRIEVAL_MODEL}.jsonl"
+)
 
-INPUT_FILE = f"/data/group_data/cx_group/temporary/Qwen2.5-0.5B-bidirectional-attn-mntp-marco-passage-hard-negatives-matrioshka-reduction-2.jsonl"
+# INPUT_FILE = f"/data/group_data/cx_group/temporary/Qwen2.5-0.5B-bidirectional-attn-mntp-marco-passage-hard-negatives-matrioshka-reduction-2.jsonl"
 
 if not os.path.exists(INPUT_FILE):
     raise FileNotFoundError(f"Input file not found: {INPUT_FILE}")
@@ -55,7 +56,7 @@ subset_data_entries = [
 
 def build_prompt(query, passages, template):
 
-    context = "\n".join(passages[:10])
+    context = "\n".join(passages[:RAG_N_PASSAGES])
     user_content = template.format(context=context, query=query)
 
     messages = [
@@ -75,7 +76,7 @@ PROMPT_TEMPLATE = load_template(PROMPT)
 prompts = []
 for entry in tqdm(subset_data_entries, desc=f"Task {task_id}"):
     query = entry["query"]
-    passages = entry.get("passages", [])
+    passages = entry["passages"]
     prompt_text = build_prompt(query, passages, PROMPT_TEMPLATE)
     prompts.append(prompt_text)
 

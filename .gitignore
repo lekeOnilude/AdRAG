@@ -139,3 +139,6 @@ wandb/
 
 retrieval/output/*
 !retrieval/output/README.md
+
+generator/output/*
+!generator/output/README.md

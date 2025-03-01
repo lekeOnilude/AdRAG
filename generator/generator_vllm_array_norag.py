@@ -16,13 +16,20 @@ task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 num_tasks = 8
 
 
+def load_template(filepath):
+    with open(filepath, "r", encoding="utf-8") as f:
+        return f.read()
+
+
 QUERY_SET = "marcov2"
 RETRIEVAL_MODEL = "Qwen2.5-0.5B-bidirectional-attn-mntp-marco-passage-hard-negatives-matrioshka-reduction-2"
-RUN_NAME = "Qwen2.5-1.5B-Instruct-10-passage-RAG"
+RUN_NAME = f"{model_name.split('/')[-1]}-NO-RAG"
+PROMPT = f"./prompts/{QUERY_SET}_norag.prompt"
 
 INPUT_FILE = (
     f"/home/jmcoelho/11797_Project/retrieval/output/{QUERY_SET}/{RETRIEVAL_MODEL}.jsonl"
 )
+
 if not os.path.exists(INPUT_FILE):
     raise FileNotFoundError(f"Input file not found: {INPUT_FILE}")
 
@@ -44,14 +51,9 @@ subset_data_entries = [
 ]
 
 
-def build_prompt(query, passages):
+def build_prompt(query, template):
 
-    nl = "\n"
-    user_content = f"""Answer the following web query, given the context. 
-    Context: {nl.join(passages[:10])}.
-    Query: {query}.
-    Reply with your answer only. Do not include the query or any other information. Keep your answer short.
-    """
+    user_content = template.format(query=query)
 
     messages = [
         {
@@ -66,12 +68,14 @@ def build_prompt(query, passages):
     return prompt_text
 
 
+PROMPT_TEMPLATE = load_template(PROMPT)
 prompts = []
 for entry in tqdm(subset_data_entries, desc=f"Task {task_id}"):
     query = entry["query"]
-    passages = entry.get("passages", [])
-    prompt_text = build_prompt(query, passages)
+    prompt_text = build_prompt(query, PROMPT_TEMPLATE)
     prompts.append(prompt_text)
+    print(prompts)
+    exit()
 
 outputs = llm.generate(prompts, sampling_params)
 assert len(outputs) == len(subset_data_entries)

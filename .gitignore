@@ -143,4 +143,6 @@ retrieval/output/*
 !retrieval/output/README.md
 generator/output/*
 !generator/output/README.md
+rewriter/output/*
+!rewriter/output/README.md
 

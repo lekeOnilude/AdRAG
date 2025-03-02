@@ -15,4 +15,4 @@ export HF_HOME=/data/group_data/cx_group/query_generation_data/hf_cache/
 eval "$(conda shell.bash hook)"
 conda activate vllm
 
-python subtask2_classifier.py
+python subtask2_and_synthetic.py

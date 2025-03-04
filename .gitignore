@@ -139,3 +139,5 @@ wandb/
 preprocess_data/
 predictions/
 *.json
+retrieval/output/*
+!retrieval/output/README.md

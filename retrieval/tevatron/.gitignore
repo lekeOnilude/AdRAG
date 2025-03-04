@@ -1,0 +1,8 @@
+.idea/
+__pycache__/
+*.egg-info/
+
+wandb
+logs
+qrels
+GradCache

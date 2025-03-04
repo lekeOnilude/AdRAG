@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 # Model paths
 model_dir = "./models/subtask2_test"  # Path to your trained classification model
-rewritten_responses_file = "rewritten_responses_append_only.json" # Path to the rewritten responses
+rewritten_responses_file = "rewritten_responses_gemma-7b-it_fewshot_2.json" # Path to the rewritten responses
 
 # Load the classification model and tokenizer
 tokenizer = AutoTokenizer.from_pretrained(model_dir)
@@ -46,7 +46,7 @@ for item in tqdm(rewritten_responses, desc="Predicting labels"):
 
 
 # Save the predictions
-with open("./predictions/baseline_text_w_ads_appened.jsonl", "w") as outfile:
+with open(f"./predictions/predicted_label{'_'.join(rewritten_responses_file.split('_')[2:]).split('.')[0]}.jsonl", "w") as outfile:
     for prediction in predictions:
         json.dump(prediction, outfile)
         outfile.write("\n")

@@ -97,7 +97,7 @@ PRODUCT_PROPERTIES = [
 
 DATE_PROPERTIES = ["P571", "P577"]
 
-HEADERS = {"User-Agent": "YourAppName/1.0 (your.email@example.com)"}
+HEADERS = {"User-Agent": "toeunk@cs.cmu.edu"}
 
 
 def get_pages_using_infobox(template_name, namespace=0) -> list[dict]:
@@ -267,7 +267,7 @@ def parse_year_from_infobox(page_title):
                 if template.has(field):
                     val = template.get(field).value.strip_code().strip()
                     # Use regex to extract a 4-digit year but only year from 1800 to 2099
-                    match = re.search(r'\b(1[89]\d{2}|20\d{2})\b', val)
+                    match = re.search(r"\b(1[89]\d{2}|20\d{2})\b", val)
                     if match:
                         try:
                             year_int = int(match.group(0))
@@ -350,6 +350,9 @@ for infobox_name in tqdm(infobox_names):
     random.shuffle(
         pages
     )  # shuffle pages so that they are not listed in alphabetical order
+    # Cap to 700 for infoboxes with too high transclusion count
+    if len(pages) > 2000:
+        pages = pages[:2000]
 
     # Collect page info
     page_info_dicts: list[dict] = []

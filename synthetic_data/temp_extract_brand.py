@@ -81,7 +81,7 @@ CANDIDATE_PROPERTIES = [
     "P4087",
     "P8731",
     "P9618",
-    "P9897", 
+    "P9897",
     "P12969",
 ]
 
@@ -242,12 +242,14 @@ def is_product_page(page_title):
 
     return False
 
+
 ###############
 # Driver Code #
 ###############
 page_titles = [
+    "Dolby Vision",
     # Likely a specific product
-    # "Lego",  
+    # "Lego",
     # "Pin-Bot",
     # "Tippmann TPX",
     # "G.I. Joe",
@@ -264,11 +266,11 @@ page_titles = [
     # "Ducati 916",
     # "HP-65",
     # "TI-81",
-    # "Nikon D70", 
+    # "Nikon D70",
     # "Minolta Maxxum 7000",
     # "Tylenol (brand)",
     # "Cap'n Crunch",
-    # "Barbie", 
+    # "Barbie",
     # "Shenwuji",
     # "Cyber Weapon Z",
     # "I'd_Rather_Be_Right",
@@ -291,11 +293,11 @@ page_titles = [
     # "Crash (Ballard novel)",
     # "Carmilla",
     # "Blade Runner 2: The Edge of Human",
-    "Back to the Klondike",
-    "Pluto Saves the Ship",
-    "Sheriff of Bullet Valley"
+    # "Back to the Klondike",
+    # "Pluto Saves the Ship",
+    # "Sheriff of Bullet Valley"
     # # Likely a general concept
-    # "Yo-yo",  
+    # "Yo-yo",
     # "Doll",
     # "Action figure",
     # "Model car",

@@ -146,3 +146,4 @@ generator/output/*
 rewriter/output/*
 !rewriter/output/README.md
 
+synthetic_data/scripts/*

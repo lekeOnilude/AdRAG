@@ -250,7 +250,7 @@ def parse_year_from_infobox(page_title):
     """
     Fallback: Retrieves the raw wikitext of the given page and uses
     mwparserfromhell to search the infobox for fields like 'inception' or 'released'.
-    It then uses a regex to capture a 4-digit year (e.g., 1999 or 2012) past 1940 and
+    It then uses a regex to capture a 4-digit year (e.g., 1999 or 2012) and
     returns a date object set to January 1st of that year.
     """
     wikitext = get_infobox_wikitext(
@@ -266,8 +266,8 @@ def parse_year_from_infobox(page_title):
             for field in ["inception", "released"]:
                 if template.has(field):
                     val = template.get(field).value.strip_code().strip()
-                    # Use regex to extract a 4-digit year but only year from 1940
-                    match = re.search(r"\b(19[4-9]\d|20\d{2})\b", val)
+                    # Use regex to extract a 4-digit year but only year from 1800 to 2099
+                    match = re.search(r'\b(1[89]\d{2}|20\d{2})\b', val)
                     if match:
                         try:
                             year_int = int(match.group(0))
@@ -362,8 +362,11 @@ for infobox_name in tqdm(infobox_names):
         if product_page_flag:
             # 1. page url
             page_url = f"https://en.wikipedia.org/wiki/{page_title.replace(' ', '_')}"
-            # 2. product release date
+            # 2. product release date (record only year after 1999)
             product_date = get_product_date(claims)
+            if product_date is not None:
+                # this is to ensure that we only rank products by recency if the products are fairly recent
+                product_date = product_date if product_date.year > 1999 else None
             page_info_dicts.append(
                 {
                     "InfoboxName": infobox_name,

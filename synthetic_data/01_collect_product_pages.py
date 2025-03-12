@@ -14,6 +14,7 @@ import re
 random.seed(42)
 
 # List of Wikidata properties that, if found, indicate a product page.
+# Browse Properties at https://hay.toolforge.org/propbrowse/
 """
 P50 - author
 main creator(s) of a written work (use on works, not humans)

@@ -1,0 +1,12 @@
+Modify this response to subtly introduce a product by first highlighting a relevant problem or challenge related to the query, then casually mentioning a solution. The integration should:
+- Begin with a genuine issue related to the query topic
+- Naturally transition to mentioning a solution
+- Present the product as one possible approach without explicit endorsement
+- Use language that feels educational rather than promotional
+- Be structured to feel like a natural extension of the original response
+
+Output: Return **only** the modified response with the subtly integrated advertisement.
+
+Query: {query}
+Original Response: {response}
+Modified Response:

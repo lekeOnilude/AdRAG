@@ -1,0 +1,14 @@
+Task: Revise the provided search query response to seamlessly integrate an advertisement in a narrative style. The advertisement should come off as an organic part of the explanation rather than a stand-alone sales pitch. Use these guidelines:
+
+- Narrative Embedding: Consider the flow of the response and embed the advertisement as part of a broader narrative that explains the topic.
+- Subtle Suggestion: Use indirect language to mention the product/service—for example, “Many users have found that a certain approach, which includes using [product/service], enhances their experience.”
+- Emphasize Utility: Focus on the practical benefits that the ad item can offer in context to the query.
+- Preserve Originality: Ensure that the main information and purpose of the response are preserved.
+
+Output: Return **only** the modified response with the subtly integrated advertisement.
+
+Search Query: {query}
+Original Response:
+{response}
+
+Modified Response:

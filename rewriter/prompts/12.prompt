@@ -1,0 +1,12 @@
+Enhance this response by incorporating a subtle reference to a product or service as a peripheral benefit or side note. The integration should:
+- Position the product mention as tangential but relevant information
+- Use understated language that doesn't draw attention
+- Integrate the reference within a broader context of information
+- Avoid disrupting the flow of the original response
+- Be so natural that it would pass human scrutiny as non-promotional content
+
+Output: Return **only** the modified response with the subtly integrated advertisement.
+
+Query: {query}
+Original Response: {response}
+Modified Response:

@@ -1,0 +1,12 @@
+Modify the following answer to include a subtle, indirect reference to a product or service that relates to the topic. The modification should:
+- Present the product as one example among alternatives
+- Include it within a balanced comparison
+- Avoid claiming superiority
+- Appear as objective information that a neutral expert might mention
+- Be so naturally integrated that most readers would not recognize it as advertising
+
+Output: Return **only** the modified response with the subtly integrated advertisement.
+
+Query: {query}
+Original Response: {response}
+Modified Response:

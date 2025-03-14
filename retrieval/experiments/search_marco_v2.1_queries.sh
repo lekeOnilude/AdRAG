@@ -38,16 +38,16 @@ CUDA_VISIBLE_DEVICES=0 python -m tevatron.retriever.driver.encode \
     --per_device_eval_batch_size 300 \
     --query_max_len 32 \
     --passage_max_len 128 \
-    --dataset_path /home/jmcoelho/11797_Project/data/marco_v2.1_qa_train/queries_with_answer_and_bing_passages.jsonl \
-    --encode_output_path $EMBEDDING_OUTPUT_DIR/query-marcov2-train.pkl
+    --dataset_path /home/jmcoelho/11797_Project/data/marco_v2.1_qa_train_no_ans/queries_without_answer_and_bing_passages_150k.jsonl \
+    --encode_output_path $EMBEDDING_OUTPUT_DIR/query-marcov2-train-set2.pkl
 
 
 
 set -f && OMP_NUM_THREADS=24 python -m tevatron.retriever.driver.search \
-    --query_reps $EMBEDDING_OUTPUT_DIR/query-marcov2-train.pkl \
+    --query_reps $EMBEDDING_OUTPUT_DIR/query-marcov2-train-set2.pkl \
     --passage_reps $EMBEDDING_OUTPUT_DIR/corpus.marco.v2.passage.segmented.*.pkl \
     --depth 100 \
     --batch_size 128 \
     --save_text \
-    --save_ranking_to $EMBEDDING_OUTPUT_DIR/run.marcov2.train.txt
+    --save_ranking_to $EMBEDDING_OUTPUT_DIR/run.marcov2.train.set2.txt
 

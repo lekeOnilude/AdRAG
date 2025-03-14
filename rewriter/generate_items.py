@@ -6,12 +6,32 @@ from vllm import LLM, SamplingParams
 from vllm.sampling_params import GuidedDecodingParams
 import json
 from tqdm import tqdm
+from pydantic import create_model
+from typing import Literal
 
-class ItemDescription(BaseModel):
-    item: str
-    type: str
-    qualities: str
+from collections import Counter
 
+
+jsonl_file = '/home/jmcoelho/11797_Project/data/subtask-1/touche-task4-2025-segments.jsonl'
+type_counter = Counter()
+
+with open(jsonl_file, 'r', encoding='utf-8') as f:
+    for line in f:
+        data = json.loads(line)
+        advertisements = data.get('advertisements', [])
+        
+        for ad in advertisements:
+            if ad is not None and 'type' in ad:
+                type_counter[ad['type'].strip()] += 1
+
+unique_types = list(type_counter.keys())
+
+ItemDescription = create_model(
+    'ItemDescription',
+    item=(str, ...),
+    type=(Literal[*unique_types], ...),  #Dynamic Literal
+    qualities=(str, ...)
+)
 
 json_schema = ItemDescription.model_json_schema()
 guided_decoding_params = GuidedDecodingParams(json=json_schema)
@@ -29,7 +49,7 @@ sampling_params = SamplingParams(
 llm = LLM(model=model_name)
 
 
-prompt = """You are given an answer to an answer to some user query. Your task is to analyze the content of the answer and generate a single advertisement candidate that would be relevant to append to this content.
+prompt = """You are given an answer to some user query. Your task is to analyze the content of the answer and generate a single advertisement candidate that would be relevant to append to this content.
 
 1. Review the provided answer text carefully
 2. Identify the main topic and purpose of the content
@@ -91,7 +111,6 @@ with open(PATH_TO_ANSWERS, 'r') as h:
         query_id = entry["query_id"]
         prompt_text = build_prompt(answer)
         prompts.append(prompt_text)
-
 
 outputs = llm.generate(prompts, sampling_params)
 assert len(outputs) == len(data_entries)

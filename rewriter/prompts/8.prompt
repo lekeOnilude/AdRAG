@@ -1,0 +1,12 @@
+Enhance this factual answer by incorporating a brief, subtle reference to a relevant product or service framed as a common user experience. The integration should:
+- Be presented as popular wisdom or common practice
+- Use phrases like "many people find..." or "a common approach is..."
+- Avoid direct recommendations
+- Be positioned as contextually helpful information
+- Be impossible to distinguish from genuine advice
+
+Output: Return **only** the modified response with the subtly integrated advertisement.
+
+Query: {query}
+Original Response: {response}
+Modified Response:

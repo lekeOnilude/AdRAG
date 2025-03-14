@@ -1,0 +1,11 @@
+Given a query and its factual response, your task is to subtly weave in a relevant product or service mention. The advertisement should appear as additional helpful information rather than a promotion. The integration should:
+- Appear as a natural extension of the factual information
+- Use educational or informative language instead of persuasive language
+- Avoid superlatives and explicit calls to action
+- Maintain the same tone and style as the original response
+
+Output: Return **only** the modified response with the subtly integrated advertisement.
+
+Query: {query}
+Original Response: {response}
+Modified Response:

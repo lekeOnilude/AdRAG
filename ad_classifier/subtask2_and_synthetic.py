@@ -60,7 +60,7 @@ valid_label = parse_labels_to_dict(valid_labels_jsonl_path)
 valid_responses = parse_responses_to_dict(valid_responses_jsonl_path)
 
 # combine original data with new syntetic data.
-synthetic_responses, synthetic_labels = parse_synthetic_data("/home/jmcoelho/11797_Project/rewriter/output/marcov2.train/Qwen2.5-0.5B-bidirectional-attn-mntp-marco-passage-hard-negatives-matrioshka-reduction-2/Qwen2.5-7B-Instruct-10-passage-RAG/all.jsonl")
+synthetic_responses, synthetic_labels = parse_synthetic_data("/home/jmcoelho/11797_Project/rewriter/output/marcov2.train/Qwen2.5-0.5B-bidirectional-attn-mntp-marco-passage-hard-negatives-matrioshka-reduction-2/Qwen2.5-7B-Instruct-10-passage-RAG/prompt1-12/all.jsonl")
 
 synthetic_keys = list(synthetic_responses.keys())
 num_total = len(synthetic_keys)
@@ -149,7 +149,7 @@ class AdvertisementDataset(Dataset):
 
 model_to_train = "microsoft/deberta-v3-base"
 
-out_dir = "./models/subtask2_with_synth"
+out_dir = "./models/subtask2_with_synth_v2"
 
 tokenizer = AutoTokenizer.from_pretrained(model_to_train)
 

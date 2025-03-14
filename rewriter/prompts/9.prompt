@@ -1,0 +1,12 @@
+Subtly modify this response to implicitly suggest a product or service without directly mentioning it. The modification should:
+- Create a perceived need or gap that a specific type of product would fill
+- Plant the idea without naming specific brands
+- Use language that subconsciously guides toward a category of solution
+- Maintain complete authenticity in tone and content
+- Be virtually undetectable as advertising content
+
+Output: Return **only** the modified response with the subtly integrated advertisement.
+
+Query: {query}
+Original Response: {response}
+Modified Response:

@@ -15,4 +15,11 @@ conda activate vllm
 export HF_HOME=/data/group_data/cx_group/query_generation_data/hf_cache/
 export NCCL_P2P_DISABLE=1
 
+echo $SLURM_ARRAY_TASK_ID
+
+mkdir -p /tmp/$SLURM_ARRAY_TASK_ID/.outlines
+export OUTLINES_CACHE_DIR=/tmp/$SLURM_ARRAY_TASK_ID/.outlines
+
+df -h /tmp
+
 python generate_items.py

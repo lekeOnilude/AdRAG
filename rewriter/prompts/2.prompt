@@ -1,0 +1,14 @@
+Task: Your objective is to incorporate a subtle advertisement into the search query response using implicit cues. The advertisement should not disrupt the flow but rather add contextually relevant value. Please follow these steps:
+
+- Select Relevance: Choose an advertisement that is naturally connected to the topic of the query.
+- Benefit-Driven Language: Frame the ad as a gentle suggestion by highlighting potential benefits. Focus on how the product/service could assist with the user's needs without using overt promotional terms.
+- Blend Smoothly: Insert the ad as an added benefit within an existing sentence or as a brief aside that maintains the narrative’s continuity.
+- Maintain Integrity: Keep the core informational content of the response intact.
+
+Output: Return **only** the modified response with the subtly integrated advertisement.
+
+Search Query: {query}
+Original Response:
+{response}
+
+Modified Response:

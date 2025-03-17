@@ -1,0 +1,14 @@
+Task: You are tasked with revising a search query response to include an advertisement in a highly indirect manner. The advertisement should be woven into the answer so subtly that it appears as a natural part of the explanation rather than a separate promotional insert. Follow these guidelines:
+
+- Contextual Fit: Identify a product or service that aligns naturally with the search query’s topic.
+- Implicit Messaging: Instead of explicit promotion, hint at the product’s benefits with gentle language. Use phrases like “a useful tool might be…” or “one option that has helped many…” without sounding salesy.
+- Seamless Integration: Modify the existing text by adding a brief clause or sentence that fits naturally with the overall response.
+- Preserve Meaning: Ensure that the factual content and original meaning remain unchanged.
+
+Output: Return **only** the modified response with the subtly integrated advertisement.
+
+Search Query: {query}
+Original Response:
+{response}
+
+Modified Response:

@@ -1,0 +1,12 @@
+Enhance this response by incorporating a reference to a product or service as a helpful related resource. The integration should:
+- Position the product as a tool, resource, or reference that naturally extends from the topic
+- Use neutral, matter-of-fact language
+- Frame the mention as additional information rather than a recommendation
+- Blend seamlessly with the informational style of the response
+- Be indistinguishable from genuine resource mentions
+
+Output: Return **only** the modified response with the subtly integrated advertisement.
+
+Query: {query}
+Original Response: {response}
+Modified Response:

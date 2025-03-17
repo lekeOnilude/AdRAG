@@ -68,5 +68,5 @@ def evaluate_all_jsonl_files(directory):
 
 
 if __name__ == "__main__":
-    predictions_directory = "./predictions"
+    predictions_directory = "predictions/touche_data/classifier_v1"
     evaluate_all_jsonl_files(predictions_directory)

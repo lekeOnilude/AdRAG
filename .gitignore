@@ -141,3 +141,8 @@ predictions/
 *.json
 retrieval/output/*
 !retrieval/output/README.md
+slurm_logs/
+*.out
+*.err
+*_output
+*rewriter/rewritten_response_output_dummydata

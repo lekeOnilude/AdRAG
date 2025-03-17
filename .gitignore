@@ -139,6 +139,7 @@ wandb/
 preprocess_data/
 predictions/
 *.json
+!rewriter/train_models/deepspeed/ds.json
 retrieval/output/*
 !retrieval/output/README.md
 generator/output/*

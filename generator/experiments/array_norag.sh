@@ -16,4 +16,4 @@ export NCCL_P2P_DISABLE=1
 eval "$(conda shell.bash hook)"
 conda activate vllm
 
-python generator_vllm_array.py
+python generator_vllm_array_norag.py

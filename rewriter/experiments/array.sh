@@ -10,10 +10,13 @@
 #SBATCH --time=2-00:00:00
 #SBATCH --exclude=babel-8-13,babel-13-13,babel-13-17,babel-14-37,babel-6-9,babel-7-9,babel-3-21,babel-13-25,babel-13-1,babel-14-1,babel-12-9,babel-4-9
 
-export HF_HOME=/data/group_data/cx_group/query_generation_data/hf_cache/
-export NCCL_P2P_DISABLE=1
+
 
 eval "$(conda shell.bash hook)"
 conda activate vllm
 
-python generator_vllm_array.py
+export HF_HOME=/data/group_data/cx_group/query_generation_data/hf_cache/
+export NCCL_P2P_DISABLE=1
+export HF_TOKEN="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"
+
+python generate_synthetic_marco_dataset.py

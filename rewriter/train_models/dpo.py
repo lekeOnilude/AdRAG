@@ -21,39 +21,77 @@ class TrainingArguments(transformers.TrainingArguments):
         },
     )
 
-PATH_TO_TRIPLETS = (
-    f"/data/user_data/jmcoelho/datasets/llama_generator/gpt_3.5_turbo_dpo_dataset.tsv"
+PATH_TO_DATA = (
+    f"/home/jmcoelho/11797_Project/rewriter/output/marcov2.train.set2/answers_with_ads/generated_ads_Qwen2.5-7B-Instruct_temp_1.0_dpo.jsonl"
 )
 
+base_prompt = """Rewrite the following text to make it more engaging and evocative.
+In your rewrite, subtly incorporate an implicit advertisement strategy for {item} within the {type} sector,
+highlighting the following product qualities {qualities}.
+Ensure the ad blends naturally into the text without being overly promotional.
+Return only the revised text with the embedded ad.
 
-def create_hf_dataset_from_tsv(tsv_file):
-    df = pd.read_csv(tsv_file, sep="\t")
-    hf_dataset = Dataset.from_pandas(df)
+Original Text: {response}
+"""
+
+
+def create_hf_dataset_from_jsonl(jsonl_file):
+    """Create a HuggingFace dataset from a JSONL file."""
+    data = []
+    with open(jsonl_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            data.append(json.loads(line))
+    
+    df = pd.DataFrame(data)
+    
+    formatted_data = []
+    for _, row in df.iterrows():
+        item_data = row['item']
+        if isinstance(item_data, str):
+            item_data = json.loads(item_data)
+            
+        prompt = base_prompt.format(
+            item=item_data['item'],
+            type=item_data['type'],
+            qualities=item_data['qualities'],
+            response=row['response']
+        )
+        
+        formatted_data.append({
+            "prompt": prompt,
+            "chosen": row['best_answer'],
+            "rejected": row['worst_answer']
+        })
+    
+    formatted_df = pd.DataFrame(formatted_data)
+    hf_dataset = Dataset.from_pandas(formatted_df)
     return hf_dataset
 
-
 def load_model_and_tokenizer(
-    model_path: str = "/data/models/huggingface/meta-llama/Meta-Llama-3-8B-Instruct",
+    model_path: str = "Qwen/Qwen2.5-7B-Instruct",
 ):
     """load model and tokenizer"""
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
 
     model = AutoModelForCausalLM.from_pretrained(
-        model_path, torch_dtype=torch.bfloat16, attn_implementation="flash_attention_2"
+        model_path, torch_dtype=torch.bfloat16, attn_implementation="flash_attention_2", use_cache=False
     )
 
-    model.print_trainable_parameters()
+    ref_model = AutoModelForCausalLM.from_pretrained(
+        model_path, torch_dtype=torch.bfloat16, attn_implementation="flash_attention_2", use_cache=False
+    )
 
-    return model, tokenizer
+    return model, ref_model, tokenizer
 
 
 if __name__ == "__main__":
 
-    OUTPATH = "/data/user_data/jmcoelho/models/query_generators/dpo_gpt_pairs/"
-    model, tokenizer = load_model_and_tokenizer()
+    OUTPATH = "/data/user_data/jmcoelho/models/ad_writer/dpo_it0/"
+    model, ref_model, tokenizer = load_model_and_tokenizer()
 
-    dataset = create_hf_dataset_from_tsv(PATH_TO_TRIPLETS)
+    dataset = create_hf_dataset_from_jsonl(PATH_TO_DATA)
     dataset = dataset.map(
         lambda row: {
             "prompt": [{"role": "user", "content": row["prompt"]}],
@@ -70,9 +108,9 @@ if __name__ == "__main__":
     args = DPOConfig(
         output_dir=OUTPATH,
         num_train_epochs=1,
-        per_device_train_batch_size=8,
-        per_device_eval_batch_size=8,
-        gradient_accumulation_steps=1,
+        per_device_train_batch_size=1,
+        per_device_eval_batch_size=1,
+        gradient_accumulation_steps=8,
         gradient_checkpointing=True,
         bf16=True,
         learning_rate=1e-5,
@@ -86,12 +124,13 @@ if __name__ == "__main__":
         max_prompt_length=1536,
         max_completion_length=512,
         report_to="wandb",
-        run_name="dpo_test2",
-        deepspeed="./deepspeed/ds.json",
+        run_name="dpo_test3",
+        deepspeed="./train_models/deepspeed/ds.json",
     )
 
     dpo_trainer = DPOTrainer(
-        model,
+        model=model,
+        ref_model=ref_model,
         args=args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,

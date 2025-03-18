@@ -160,6 +160,7 @@ if __name__ == "__main__":
         "model": model_path,
         "n_shot": n_shot,
         "clf_model": clf_model_dir,
+        "temperature": temperature,
         "report": report,
         "accuracy": report['accuracy'],
         "f1-score": report['weighted avg']['f1-score'],

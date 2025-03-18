@@ -21,7 +21,7 @@ class TrainingArguments(transformers.TrainingArguments):
     )
 
 PATH_TO_DATA = (
-    f"/home/jmcoelho/11797_Project/rewriter/output/marcov2.train.set2/answers_with_ads/generated_ads_Qwen2.5-7B-Instruct_temp_1.0_stf.jsonl"
+    "preprocess_data/generated_ads_Qwen2.5-7B-Instruct_temp_1.0_stf.jsonl"
 )
 
 base_prompt = """Rewrite the following text to make it more engaging and evocative.
@@ -80,14 +80,16 @@ def load_model_and_tokenizer(
     return model, tokenizer
 
 if __name__ == "__main__":
-    OUTPATH = "/data/user_data/jmcoelho/models/ad_writer/dpo_it0/"
+    OUTPATH = "/data/group_data/cx_group/models/gonilude/ad_writer/sft_it0/"
     model, tokenizer = load_model_and_tokenizer()
 
     dataset = create_hf_dataset_from_jsonl(PATH_TO_DATA)
     dataset = dataset.map(
         lambda row: {
-            "prompt": [{"role": "user", "content": row["prompt"]}],
-            "completion": [{"role": "assistant", "content": row["chosen"]}],
+            "messages" : [
+                {"role": "user", "content": row["prompt"]},
+                {"role": "assistant", "content": row["chosen"]}
+                ],
         }
     )
 
@@ -95,6 +97,7 @@ if __name__ == "__main__":
     train_dataset = train_test_split["train"]
     eval_dataset = train_test_split["test"]
 
+    print(train_dataset[1])
     args = SFTConfig(
         output_dir=OUTPATH,
         num_train_epochs=1,
@@ -110,12 +113,10 @@ if __name__ == "__main__":
         save_steps=10000,
         evaluation_strategy="steps",
         eval_steps=100,
-        max_length=2048,
-        max_prompt_length=1536,
-        max_completion_length=512,
+        max_seq_length=2048,
         report_to="wandb",
         run_name="sft_test",
-        deepspeed="./deepspeed/ds.json",
+        deepspeed="rewriter/train_models/deepspeed/ds.json",
     )
 
     trainer = SFTTrainer(

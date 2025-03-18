@@ -11,11 +11,10 @@
 
 export NCCL_P2P_DISABLE=1
 
-SEED=$SLURM_ARRAY_TASK_ID
 
 n_shot=5
-temp=1
+temp=0.5
 classifier="jmvcoelho/ad-classifier-v0.1"
 model_dir="/data/group_data/cx_group/models/gonilude/ad_writer/sft_it0/checkpoint-953/"
 
-python rewriter/evaluate_generate_ad.py --model-path $model_dir --n-shot 5 --clf-model-dir $classifier --n-shot $n_shot --temperature $temp
+python rewriter/evaluate_generate_ad.py --model-path $model_dir --clf-model-dir $classifier --n-shot $n_shot --temperature $temp

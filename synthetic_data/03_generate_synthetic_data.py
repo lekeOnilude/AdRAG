@@ -97,9 +97,7 @@ def get_response_from_gpt4o(system_msg, user_msg, temperature: float = 1.0) -> s
 
         except Exception as e:
             if attempt == 0:
-                print(
-                    f"GPT attempt failed. Due to {e}. Retrying...", flush=True
-                )
+                print(f"GPT attempt failed. Due to {e}. Retrying...", flush=True)
                 time.sleep(0.5)
                 continue
             print(f"GPT attempt failed due to: {e}.", flush=True)
@@ -186,7 +184,7 @@ for idx, row in tqdm(merged_df.iterrows()):
         summary_subprompt=summary_subprompt_filled,
         key_features_subprompt=key_features_subprompt_filled,
     )
-    
+
     # Request GPT4o for indirect and implicit advertisement.
     positive_response = get_response_from_gpt4o(
         HARD_POSITIVE_SYS_PROMPT, hard_positive_prompt

@@ -10,13 +10,13 @@ from tqdm import tqdm
 import pandas as pd
 
 
-def load_model(model_name):
+def load_model(model_name, temperature):
     
     # Load the default sampling parameters from the model.
     llm = LLM(model=model_name, download_dir='/data/group_data/cx_group/')
     sampling_params = llm.get_default_sampling_params()
     sampling_params.max_tokens = 1024
-    sampling_params.temperature =0.5
+    sampling_params.temperature =temperature
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     return llm, sampling_params, tokenizer
 
@@ -118,6 +118,12 @@ if __name__ == "__main__":
         type=int, 
         default=0,
         help='number of few-shot examples to use')
+    parser.add_argument(
+        '--temperature', 
+        type=float, 
+        default=0.5,
+        help='temperature for sampling'
+    )
     
     args = parser.parse_args()
     
@@ -125,12 +131,13 @@ if __name__ == "__main__":
     model_path = args.model_path
     clf_model_dir = args.clf_model_dir
     n_shot = args.n_shot
+    temperature = args.temperature
     
 
     rows = read_jsonl(file_path)
 
     print("Loading model and tokenizer...")
-    llm, sampling_params, tokenizer = load_model(model_path)
+    llm, sampling_params, tokenizer = load_model(model_path, temperature)
 
     prompts = []
     for row in rows:

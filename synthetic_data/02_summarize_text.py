@@ -5,6 +5,7 @@
 Saves a data file as follows:
 wikidataID, summarized_text, quality
 """
+
 import requests
 from dotenv import load_dotenv
 import openai

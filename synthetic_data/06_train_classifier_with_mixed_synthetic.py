@@ -18,7 +18,6 @@ import torch
 from torch.utils.data import Dataset
 import random
 import math
-import matplotlib.pyplot as plt
 
 # Optional Weights & Biases integration
 try:
@@ -254,103 +253,6 @@ def compute_metrics(p):
     return {"accuracy": accuracy, "precision": precision, "recall": recall, "f1": f1}
 
 
-# Custom callback to track and visualize training metrics
-class MetricsTrackingCallback(Trainer.callback):
-    def __init__(self):
-        self.train_losses = []
-        self.train_steps = []
-        self.eval_metrics = []
-
-    def on_log(self, args, state, control, logs=None, **kwargs):
-        logs = logs or {}
-
-        # Track training loss
-        if "loss" in logs and state.is_local_process_zero:
-            self.train_losses.append(logs["loss"])
-            self.train_steps.append(state.global_step)
-
-        # Track evaluation metrics
-        if "eval_accuracy" in logs and state.is_local_process_zero:
-            self.eval_metrics.append(
-                {
-                    "step": state.global_step,
-                    "accuracy": logs.get("eval_accuracy", 0),
-                    "precision": logs.get("eval_precision", 0),
-                    "recall": logs.get("eval_recall", 0),
-                    "f1": logs.get("eval_f1", 0),
-                }
-            )
-
-    def on_train_end(self, args, state, control, **kwargs):
-        # Create and save final plots at the end of training
-        self._create_plots()
-
-    def _create_plots(self):
-        # Create training loss plot
-        if self.train_losses:
-            plt.figure(figsize=(10, 6))
-            plt.plot(self.train_steps, self.train_losses)
-            plt.title("Training Loss")
-            plt.xlabel("Steps")
-            plt.ylabel("Loss")
-            plt.grid(True)
-            plt.savefig(os.path.join(PLOTS_DIR, "training_loss.png"))
-            plt.close()
-
-            # Save raw data for future reference
-            with open(os.path.join(PLOTS_DIR, "training_loss.json"), "w") as f:
-                json.dump({"steps": self.train_steps, "losses": self.train_losses}, f)
-
-        # Create evaluation metrics plots
-        if self.eval_metrics:
-            steps = [m["step"] for m in self.eval_metrics]
-            accuracy = [m["accuracy"] for m in self.eval_metrics]
-            precision = [m["precision"] for m in self.eval_metrics]
-            recall = [m["recall"] for m in self.eval_metrics]
-            f1 = [m["f1"] for m in self.eval_metrics]
-
-            # Plot accuracy over time
-            plt.figure(figsize=(10, 6))
-            plt.plot(steps, accuracy, "b-", label="Accuracy")
-            plt.title("Validation Accuracy")
-            plt.xlabel("Steps")
-            plt.ylabel("Accuracy")
-            plt.grid(True)
-            plt.savefig(os.path.join(PLOTS_DIR, "validation_accuracy.png"))
-            plt.close()
-
-            # Plot precision, recall and F1
-            plt.figure(figsize=(12, 8))
-            plt.plot(steps, precision, "g-", label="Precision")
-            plt.plot(steps, recall, "r-", label="Recall")
-            plt.plot(steps, f1, "y-", label="F1")
-            plt.title("Validation Metrics")
-            plt.xlabel("Steps")
-            plt.ylabel("Score")
-            plt.legend()
-            plt.grid(True)
-            plt.savefig(os.path.join(PLOTS_DIR, "validation_metrics.png"))
-            plt.close()
-
-            # Combined plot with all metrics
-            plt.figure(figsize=(12, 8))
-            plt.plot(steps, accuracy, "b-", label="Accuracy")
-            plt.plot(steps, precision, "g-", label="Precision")
-            plt.plot(steps, recall, "r-", label="Recall")
-            plt.plot(steps, f1, "y-", label="F1")
-            plt.title("Evaluation Metrics")
-            plt.xlabel("Steps")
-            plt.ylabel("Score")
-            plt.legend()
-            plt.grid(True)
-            plt.savefig(os.path.join(PLOTS_DIR, "all_metrics.png"))
-            plt.close()
-
-            # Save raw data for future reference
-            df = pd.DataFrame(self.eval_metrics)
-            df.to_csv(os.path.join(PLOTS_DIR, "evaluation_metrics.csv"), index=False)
-
-
 training_args = TrainingArguments(
     output_dir=OUTPUT_DIR,
     learning_rate=1e-5,
@@ -393,6 +295,7 @@ if wandb_available:
 model = AutoModelForSequenceClassification.from_pretrained(model_to_train, num_labels=2)
 model.to(device)
 
+# Initialize the trainer
 trainer = Trainer(
     model=model,
     args=training_args,
@@ -401,19 +304,6 @@ trainer = Trainer(
     tokenizer=tokenizer,
     data_collator=collator,
     compute_metrics=compute_metrics,
-)
-
-# Initialize the trainer with our custom callback
-metrics_callback = MetricsTrackingCallback()
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=train_dataset,
-    eval_dataset=valid_dataset,
-    tokenizer=tokenizer,
-    data_collator=collator,
-    compute_metrics=compute_metrics,
-    callbacks=[metrics_callback],
 )
 
 # Start training
@@ -423,10 +313,6 @@ trainer.train()
 # Save the final model
 trainer.save_model(OUTPUT_DIR)
 print(f"Model saved to {OUTPUT_DIR}")
-
-# Create visualization of training history
-print("Creating final visualizations...")
-metrics_callback._create_plots()
 
 # Display final evaluation metrics
 final_metrics = trainer.evaluate()

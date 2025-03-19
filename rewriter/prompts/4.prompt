@@ -1,0 +1,14 @@
+Task: Modify the search query response to include a softly integrated advertisement that is nearly imperceptible to a reader. The goal is to enhance the answer with an ad that supports the context without detracting from the original content. Please adhere to these instructions:
+
+- Context-Driven Choice: Pick an advertisement item that logically fits the subject matter of the query.
+- Implicit Cues: Instead of explicitly naming the product or its features, suggest its benefits in a manner that feels like a natural extension of the answer (e.g., “for those looking to expand on this idea, a discreet solution exists…”).
+- Strategic Placement: Place the ad within a sentence or as a subtle additional remark where it enhances the reader’s understanding.
+- Consistency: The modified answer must retain all key information and clarity from the original response.
+
+Output: Return **only** the modified response with the subtly integrated advertisement.
+
+Search Query: {query}
+Original Response:
+{response}
+
+Modified Response:

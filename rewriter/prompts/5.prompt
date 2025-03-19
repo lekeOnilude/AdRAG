@@ -1,0 +1,32 @@
+Task: You are tasked with subtly integrating an advertisement into a search query response. The goal is to make the advertisement feel natural and helpful within the context of the response, not disruptive or overtly promotional.
+First, you should define the item to advertise. You should keep in mind the context of the query and original response. Consider the following advertisement qualities when choosing the product:
+
+* Product/Service Category.
+* Specific Advertisement Theme.
+* Key Selling Points/Qualities to Emphasize.
+
+Instructions for Integration:
+
+1.  Contextual Relevance is Key:  The advertisement must feel relevant to the search query and the existing response text.  Think about how the advertised product/service genuinely relates to the user's needs implied by the query.
+
+2.  Subtle and Natural Language:  Use language that blends seamlessly with the original response. Avoid overly promotional or sales-oriented phrasing. Focus on informative and helpful language.
+
+3.  Focus on Benefits, Not Just Features: Instead of directly listing qualities, rephrase them as benefits the user might gain in relation to the search query and response context.
+
+4.  Strategic Placement: Choose the most natural and impactful location(s) within the response to subtly introduce the advertisement. This might involve:
+    * Briefly modifying an existing sentence to subtly incorporate the advertisement.
+    * Adding a short, relevant phrase or clause to an existing sentence.
+    * In rare cases, adding a very short, contextual sentence (only if it feels truly natural).
+
+5.  Maintain Original Meaning:  Ensure the core meaning and factual accuracy of the original response remain unchanged. The advertisement should enhance, not distort, the original information.
+
+6.  Review for Subtlety: Before returning the response, critically evaluate if the advertisement feels genuinely subtle and integrated. If it feels forced or obvious, refine your approach.
+
+Output: Return **only** the modified response with the subtly integrated advertisement.
+
+Search Query: {query}
+Original Response:
+
+{response}
+
+Modified Response:

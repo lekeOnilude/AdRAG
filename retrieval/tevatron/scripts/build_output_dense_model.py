@@ -3,7 +3,7 @@ import glob
 from tqdm import tqdm
 
 MODEL_NAME = "Qwen2.5-0.5B-bidirectional-attn-mntp-marco-passage-hard-negatives-matrioshka-reduction-2"
-QUERIES = "marcov2.train"  # touche;marcov2;marcov2.train
+QUERIES = "marcov2.train.set2"  # touche;marcov2;marcov2.train
 
 PATH_RUN = f"/data/group_data/cx_group/query_generation_data/temporary_indexes/{MODEL_NAME}/marco_v2_segmented/run.{QUERIES}.txt"
 
@@ -11,6 +11,7 @@ QUERIES_PATHS = {
     "touche": "/home/jmcoelho/11797_Project/data/subtask-1/queries.jsonl",
     "marcov2": "/home/jmcoelho/11797_Project/data/marco_v2.1_qa_dev/queries_with_answer_and_bing_passages.jsonl",
     "marcov2.train": "/home/jmcoelho/11797_Project/data/marco_v2.1_qa_train/queries_with_answer_and_bing_passages.jsonl",
+    "marcov2.train.set2": "/home/jmcoelho/11797_Project/data/marco_v2.1_qa_train_no_ans/queries_without_answer_and_bing_passages_150k.jsonl",
 }
 
 

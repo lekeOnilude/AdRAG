@@ -1,0 +1,5 @@
+Answer the following web query, given the context.
+Context: {context}.
+Query: {query}.
+Reply only with a "well formed answer", i.e., human-like and coheseve. The answer should be written in a style where advertisements are easy to integrate. 
+Do not include any advertisements or explicit advertisement space, just write with this stylistic choice in mind.

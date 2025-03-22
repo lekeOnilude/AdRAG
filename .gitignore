@@ -153,3 +153,4 @@ slurm_logs/
 *.err
 *_output
 *rewriter/rewritten_response_output_dummydata
+*_results.jsonl

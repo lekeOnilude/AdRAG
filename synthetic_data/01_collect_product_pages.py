@@ -2,6 +2,7 @@
 Saves a data file as follows:
 Infobox Name, wikidataID, page title, page url, is_product
 """
+
 import requests
 import datetime
 import pandas as pd
@@ -14,6 +15,7 @@ import re
 random.seed(42)
 
 # List of Wikidata properties that, if found, indicate a product page.
+# Browse Properties at https://hay.toolforge.org/propbrowse/
 """
 P50 - author
 main creator(s) of a written work (use on works, not humans)
@@ -383,9 +385,9 @@ for infobox_name in tqdm(infobox_names):
     # sort pages based on product recency
     sorted_page_info_dicts: list[dict] = sorted(
         page_info_dicts,
-        key=lambda x: x["ProductDate"]
-        if x["ProductDate"] is not None
-        else datetime.date.min,
+        key=lambda x: (
+            x["ProductDate"] if x["ProductDate"] is not None else datetime.date.min
+        ),
         reverse=True,
     )
     # limit per-infobox-page-count to 300

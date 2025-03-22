@@ -5,6 +5,7 @@
 Saves a data file as follows:
 wikidataID, summarized_text, quality
 """
+
 import requests
 from dotenv import load_dotenv
 import openai
@@ -160,7 +161,7 @@ batch = []
 # Check if the output file exists; if not, create it with header
 if not os.path.exists(OUTPUT_FP):
     with open(OUTPUT_FP, "w", encoding="utf-8") as f:
-        f.write("wikidataID\tSummary\tQuality\n")
+        f.write("WikidataID\tSummary\tKeyFeatures\n")
 
 for idx, row in tqdm(product_page_df.iterrows()):
     wikidata_id = row["WikidataID"]
@@ -174,8 +175,6 @@ for idx, row in tqdm(product_page_df.iterrows()):
     prompt = PROMPT_BASIS.format(
         page_title=page_title, infobox_name=infobox_name, page_body=page_body
     )
-
-    print(prompt)
 
     # 3) Prompt GPT-4o and get summarized text and key features
     summary, key_features = get_summary_and_key_features_from_gpt4o(

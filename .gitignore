@@ -148,8 +148,12 @@ rewriter/output/*
 !rewriter/output/README.md
 
 synthetic_data/scripts/*
+
 slurm_logs/
 *.out
 *.err
 *_output
 *rewriter/rewritten_response_output_dummydata
+*_results.jsonl
+# images
+*.png

@@ -8,7 +8,7 @@ from predict_rewriter import load_classifier, predict_label
 from sklearn.metrics import classification_report
 from tqdm import tqdm
 import pandas as pd
-
+import time
 
 def load_model(model_name, temperature):
     
@@ -94,6 +94,57 @@ def generate_text(prompts, llm, sampling_params):
     return texts
 
 
+def save_generations(generated_texts, rows, output_file):
+    """Save generated texts with their prompts to a file"""
+    outputs = []
+    for i, (text, row) in enumerate(zip(generated_texts, rows)):
+        outputs.append({
+            "id": i,
+            "advertisement": row.get("advertisement", ""),
+            "meta_topic": row.get("meta_topic", ""),
+            "qualities": row.get("qualities", ""),
+            "original_text": row.get("text", ""),
+            "generated_text": text
+        })
+    
+    with open(output_file, 'w') as f:
+        for output in outputs:
+            json.dump(output, f)
+            f.write('\n')
+    
+    print(f"Generated texts saved to {output_file}")
+    return outputs
+    
+
+def evaluate_with_classifiers(generated_texts):
+    """Evaluate texts with multiple classifier versions"""
+    results = {}
+    
+    # Ground truth labels (assuming all should be classified as ads)
+    true_labels = [1] * len(generated_texts)
+    
+    for version in ["0.0", "0.1", "0.2"]:
+        print(f"Loading classifier v{version}...")
+        clf_model_dir = f"jmvcoelho/ad-classifier-v{version}"
+        clf, clf_tokenizer = load_classifier(clf_model_dir)
+        
+        predictions = []
+        for text in tqdm(generated_texts, desc=f"Predicting with classifier v{version}"):
+            predictions.append(predict_label(text, clf_tokenizer, clf))
+        
+        # Calculate metrics
+        report = classification_report(true_labels, predictions, output_dict=True, zero_division=0)
+        results[version] = {
+            "classifier": clf_model_dir,
+            "predictions": predictions,
+            "report": report,
+            "accuracy": report['accuracy'],
+            "f1-score": report['weighted avg']['f1-score'],
+            "precision": report['weighted avg']['precision'],
+            "recall": report['weighted avg']['recall']
+        }
+    
+    return results
 
 if __name__ == "__main__":
 
@@ -111,7 +162,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--file-path', 
         type=str, 
-        default="preprocess_data/data.jsonl",
+        default="./data.jsonl",
         help='input data file path')
     parser.add_argument(
         '--n-shot', 
@@ -123,6 +174,12 @@ if __name__ == "__main__":
         type=float, 
         default=0.5,
         help='temperature for sampling'
+    )
+    parser.add_argument(
+        '--output-dir',
+        type=str,
+        default=".",
+        help='directory to save outputs'
     )
     
     args = parser.parse_args()
@@ -146,24 +203,45 @@ if __name__ == "__main__":
     print(f"Generating text with {len(prompts)} prompts...")
     generated_text = generate_text(prompts, llm, sampling_params)
 
-    print(f"Loading classifier {clf_model_dir}...")
-    clf, clf_tokenizer = load_classifier(clf_model_dir)
+    timestamp = int(time.time())
+    generations_file = os.path.join(args.output_dir, f"generations_{timestamp}.jsonl")
+    saved_data = save_generations(generated_text, rows, generations_file)
 
-    predictions = []
-    for text in tqdm(generated_text, desc="Predicting labels"):
-        predictions.append(predict_label(text, clf_tokenizer, clf))
 
-    labels = [1] * len(predictions)
+    evaluation_results = evaluate_with_classifiers(generated_text)
     
-    report = classification_report(labels, predictions, output_dict=True, zero_division=0) 
+    # Save evaluation results
     result = {
         "model": model_path,
         "n_shot": n_shot,
-        "clf_model": clf_model_dir,
-        "report": report,
-        "accuracy": report['accuracy'],
-        "f1-score": report['weighted avg']['f1-score'],
+        "temperature": temperature,
+        "classifier_results": evaluation_results,
+        "timestamp": timestamp
     }
-    with open('prediction_results.jsonl', 'a') as f:
-        json.dump(result, f)
-        f.write("\n")
+    
+    results_file = os.path.join(args.output_dir, f"evaluation_results_{timestamp}.json")
+    with open(results_file, 'w') as f:
+        json.dump(result, f, indent=2)
+    
+
+    # print(f"Loading classifier {clf_model_dir}...")
+    # clf, clf_tokenizer = load_classifier(clf_model_dir)
+
+    # predictions = []
+    # for text in tqdm(generated_text, desc="Predicting labels"):
+    #     predictions.append(predict_label(text, clf_tokenizer, clf))
+
+    # labels = [1] * len(predictions)
+    
+    # report = classification_report(labels, predictions, output_dict=True, zero_division=0) 
+    # result = {
+    #     "model": model_path,
+    #     "n_shot": n_shot,
+    #     "clf_model": clf_model_dir,
+    #     "report": report,
+    #     "accuracy": report['accuracy'],
+    #     "f1-score": report['weighted avg']['f1-score'],
+    # }
+    # with open('prediction_results.jsonl', 'a') as f:
+    #     json.dump(result, f)
+    #     f.write("\n")

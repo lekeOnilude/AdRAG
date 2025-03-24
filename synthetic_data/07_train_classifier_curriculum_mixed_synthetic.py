@@ -1,11 +1,11 @@
 """
-Train a new ad-classifier with the mix of touche, naivesynthetic, and structuredsynthetic
+For curriculumn learning, we rank the data by the classification confidence (by logit value)
 """
-
 import os
 import json
 from tqdm import tqdm
 import numpy as np
+import torch
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -13,10 +13,9 @@ from transformers import (
     Trainer,
     IntervalStrategy,
 )
-import torch
 from torch.utils.data import Dataset
-import random
 import math
+import random
 
 # Optional Weights & Biases integration
 try:
@@ -29,22 +28,31 @@ except ImportError:
         "Weights & Biases not installed. To use wandb reporting, install with: pip install wandb"
     )
 
-
 random.seed(42)
 
 CUR_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 SYNTH_DATA_DIR_PATH = os.path.join(CUR_DIR_PATH, "data")
 # Synthetic data
 SYNTH_NAIVE_FP = os.path.join(SYNTH_DATA_DIR_PATH, "single-prompt-multi-model.jsonl")
-SYNTH_STRUCTURED_FP = os.path.join(SYNTH_DATA_DIR_PATH, "synthetic-all.jsonl")
+SYNTH_STRUCTURED_FP = os.path.join(
+    SYNTH_DATA_DIR_PATH, "synthetic-structured-all.jsonl"
+)
 SYNTH_STRUCTURED_LABELS_FP = os.path.join(
-    SYNTH_DATA_DIR_PATH, "synthetic-all-labels.jsonl"
+    SYNTH_DATA_DIR_PATH, "synthetic-structured-all-labels.jsonl"
 )
 # Touche data
 TOUCHE_DATA_DIR_PATH = os.path.join(os.path.dirname(CUR_DIR_PATH), "data", "subtask-2")
 # Output directory for trained model
-OUTPUT_DIR = os.path.join(CUR_DIR_PATH, "models", "ad-classifier-v0.3")
+OUTPUT_DIR = os.path.join(CUR_DIR_PATH, "models", "ad-classifier-v0.4")
+OUTPUT_TRAIN_DIR = os.path.join(OUTPUT_DIR, "curriculum_train")
+OUTPUT_DIR_CURRICULUM_TRAIN_FP = os.path.join(OUTPUT_TRAIN_DIR, "train.jsonl")
+OUTPUT_DIR_CURRICULUM_TRAIN_LABELS_FP = os.path.join(
+    OUTPUT_TRAIN_DIR, "train-labels.jsonl"
+)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(OUTPUT_TRAIN_DIR, exist_ok=True)
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # Parse the labels and responses from the original jsonl files
@@ -80,6 +88,143 @@ def parse_synthetic_naive_data(jsonl_path):
             query_id_to_label[qid_no_ad] = 0
 
     return response_to_dict, query_id_to_label
+
+
+def load_jsonl(file_path):
+    data = []
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            data.append(json.loads(line.strip()))
+    return data
+
+
+def setup_model(hf_model_path: str):
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    tokenizer = AutoTokenizer.from_pretrained(hf_model_path)
+    model = AutoModelForSequenceClassification.from_pretrained(hf_model_path)
+    model.eval()
+    model.to(device)
+    return tokenizer, model
+
+
+def get_logit_score_of_correct_label(
+    tokenizer, model, passages: list[str], labels: list[int], batch_size=32
+):
+    """
+    Get the logit score of the correct label for each passage.
+
+    Args:
+        tokenizer: The model tokenizer
+        model: The classification model
+        passages: List of text passages to classify
+        labels: List of correct labels corresponding to passages
+        batch_size: Number of passages to process at once
+
+    Returns:
+        List of logit scores for the correct label of each passage
+    """
+    all_logit_scores = []
+
+    # Process in batches
+    for i in tqdm(range(0, len(passages), batch_size), desc="Classification batches"):
+        batch_passages = passages[i : i + batch_size]
+        batch_labels = labels[i : i + batch_size]
+
+        # Clear CUDA cache before processing each batch
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        inputs = tokenizer(
+            batch_passages,
+            padding=True,
+            truncation=True,
+            max_length=512,
+            return_tensors="pt",
+        )
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+
+        with torch.no_grad():
+            outputs = model(**inputs)
+            logits = outputs.logits
+
+            # For each sample in the batch, get the logit score for the correct label
+            batch_scores = []
+            for j, label in enumerate(batch_labels):
+                # Extract the logit score for the correct class (0 or 1)
+                correct_class_logit = logits[j, label].item()
+                batch_scores.append(correct_class_logit)
+
+            all_logit_scores.extend(batch_scores)
+
+        # Remove references to tensors
+        del inputs, outputs, logits
+
+    return all_logit_scores
+
+
+def rank_and_save_training_data(
+    train_responses, train_label, tokenizer, model, output_path, output_labels_path
+):
+    """
+    Rank training data by difficulty based on logit scores and save to file.
+
+    Lower logit scores for correct class indicate more difficult examples.
+    """
+    print("Preparing data for ranking...")
+
+    # Extract IDs, responses, and labels
+    ids = list(train_responses.keys())
+    responses = [train_responses[id] for id in ids]
+    labels = [train_label[id] for id in ids]
+
+    print(f"Computing logit scores for {len(responses)} training examples...")
+
+    # Get logit scores for correct labels
+    logit_scores = get_logit_score_of_correct_label(
+        tokenizer, model, responses, labels, batch_size=32
+    )
+
+    # Create a list of (id, response, label, logit_score) tuples
+    ranked_data = list(zip(ids, responses, labels, logit_scores))
+
+    # Sort by logit score (descending) - lower scores mean more difficult examples
+    ranked_data.sort(key=lambda x: x[3], reverse=True)
+
+    print("Saving curriculum learning data...")
+
+    # Save responses and labels simultaneously
+    with open(output_path, "w", encoding="utf-8") as f_responses, open(
+        output_labels_path, "w", encoding="utf-8"
+    ) as f_labels:
+        for id, response, label, logit_score in ranked_data:
+            # Write to responses file
+            response_obj = {"id": id, "response": response}
+            f_responses.write(json.dumps(response_obj) + "\n")
+
+            # Write to labels file
+            label_obj = {"id": id, "label": label, "logit": logit_score}
+            f_labels.write(json.dumps(label_obj) + "\n")
+
+    print(f"Ranked data saved to {output_path} and {output_labels_path}")
+
+    # Create sorted dictionaries to return
+    sorted_responses_dict = {}
+    sorted_labels_dict = {}
+
+    for id, response, label, _ in ranked_data:
+        sorted_responses_dict[id] = response
+        sorted_labels_dict[id] = label
+
+    # Return statistics about the ranking
+    difficulty_stats = {
+        "easiest_logit": ranked_data[0][3],
+        "hardest_logit": ranked_data[-1][3],
+        "median_logit": ranked_data[len(ranked_data) // 2][3],
+        "mean_logit": sum(item[3] for item in ranked_data) / len(ranked_data),
+    }
+
+    return difficulty_stats, sorted_responses_dict, sorted_labels_dict
 
 
 ## 1) initializing train and validation set with touche data
@@ -146,7 +291,34 @@ print(f"Total training examples so far: {len(train_responses)}")
 print(f"Total validation examples so far: {len(valid_responses)}")
 
 
-## 4) Train
+##################
+# Rank data entries by their difficulty
+##################
+tokenizer, model = setup_model("jmvcoelho/ad-classifier-v0.1")
+
+# Sort training example by difficulty and save the training data to output file
+#   difficulty: you check the logit score of the correct label. smaller the logit score indicates harder example.
+stats, train_responses, train_label = rank_and_save_training_data(
+    train_responses,
+    train_label,
+    tokenizer,
+    model,
+    OUTPUT_DIR_CURRICULUM_TRAIN_FP,
+    OUTPUT_DIR_CURRICULUM_TRAIN_LABELS_FP,
+)
+
+print("\nLogit Scores Statistics:")
+print(f"Easiest example (highest logit score): {stats['easiest_logit']:.4f}")
+print(f"Hardest example (lowest logit score): {stats['hardest_logit']:.4f}")
+print(f"Median difficulty: {stats['median_logit']:.4f}")
+print(f"Mean difficulty: {stats['mean_logit']:.4f}")
+
+print("\nData prepared for curriculum learning training!")
+
+
+##################
+# Train a classifier
+##################
 class ClassificationCollator:
     def __init__(self, tokenizer):
         self.tokenizer = tokenizer
@@ -211,8 +383,6 @@ class AdvertisementDataset(Dataset):
 
 model_to_train = "microsoft/deberta-v3-base"
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 tokenizer = AutoTokenizer.from_pretrained(model_to_train)
 
 train_dataset = AdvertisementDataset(
@@ -272,7 +442,7 @@ if wandb_available:
     try:
         wandb.init(
             project="advertisement-classifier",
-            name=f"ad-classifier-v0.3-{model_to_train.split('/')[-1]}",
+            name=f"ad-classifier-v0.4-{model_to_train.split('/')[-1]}",
             config={
                 "model": model_to_train,
                 "epochs": training_args.num_train_epochs,

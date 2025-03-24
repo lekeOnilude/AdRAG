@@ -157,3 +157,6 @@ slurm_logs/
 
 # images
 *.png
+
+# temporary files
+*.temp.*

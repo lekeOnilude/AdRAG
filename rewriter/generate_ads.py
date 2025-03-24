@@ -23,15 +23,25 @@ def load_model(model_name):
 
 
 def generate_prompt_for_ads_only(row, tokenizer):
-    nl = "\n"
-    user_content = f"""Rewrite the following text to make it more engaging and evocative. 
-    In your rewrite, subtly incorporate an implicit advertisement strategy for '{row['item']['item']}'within the {row['item']['type']} sector, 
-    highlighting the following product qualities {row['item']['qualities']}. 
-    Ensure the ad blends naturally into the text without being overly promotional. 
-    Return only the revised text with the embedded ad.
-
-    Original Text: '{row['response']}'
-    """
+    base_prompt = """Consider this existing response to a conversational search query, and modify it to include an implicit advertisement.
+        The advertisement should:
+        - Mention this {type}: {item};
+        - Highlight these qualities: {qualities};
+        - Blend naturally with the original response;
+        - Not appear overly promotional;
+        - Be hard to detect by current textual ad-detection systems.
+        Original query: {query}
+        Original response: {response}
+        Return only the modified response with the advertisement integrated.
+        """
+    
+    user_content = base_prompt.format(
+        type=row['item']['type'],
+        item=row['item']['item'],
+        qualities=row['item']['qualities'],
+        query=row['query'],
+        response=row['response']
+    )
 
 
     messages = [
@@ -71,9 +81,8 @@ if __name__ == "__main__":
 
     shard_size = len(rows) // args.shard[1]
     start_index = args.shard[0] * shard_size
-    end_index = min((args.shard[0] + 1) * shard_size, len(rows))
+    end_index = (args.shard[0] + 1) * shard_size if (args.shard[0] + 1) < args.shard[1] else len(rows)
     rows = rows[start_index:end_index]
-
     print(start_index, end_index)
 
     prompts = []

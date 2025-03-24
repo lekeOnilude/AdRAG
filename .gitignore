@@ -155,5 +155,9 @@ slurm_logs/
 *_output
 *rewriter/rewritten_response_output_dummydata
 *_results.jsonl
+
 # images
 *.png
+
+# temporary files
+*.temp.*
